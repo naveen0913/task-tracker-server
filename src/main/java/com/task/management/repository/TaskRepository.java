@@ -10,23 +10,34 @@ import org.springframework.scheduling.config.Task;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TaskRepository extends JpaRepository<Tasks,Long> {
+public interface TaskRepository extends JpaRepository<Tasks, Long> {
 
 
     @Query("""
-       SELECT DISTINCT t
-       FROM Tasks t
-       LEFT JOIN FETCH t.images
-       WHERE t.user = :user
-       ORDER BY t.createdAt DESC
-       """)
+            SELECT DISTINCT t
+            FROM Tasks t
+            LEFT JOIN FETCH t.images
+            WHERE t.user = :user
+            ORDER BY t.createdAt DESC
+            """)
     List<Tasks> getAllListByUser(@Param("user") User user);
 
 
     Optional<Tasks> findByTaskIdAndUser(Long taskId, User user);
+
+    @Query("""
+                SELECT t FROM Tasks t
+                WHERE t.endDateTime BETWEEN :start AND :end
+                AND t.reminderSent = false
+            """)
+    List<Tasks> findTasksForReminder(
+            LocalDateTime start,
+            LocalDateTime end
+    );
 
 }

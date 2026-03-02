@@ -12,6 +12,7 @@ import com.task.management.response.TaskImageResponse;
 import com.task.management.response.TaskResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +35,8 @@ public class TaskServiceImpl implements TaskService{
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final TaskImageRepo taskImageRepo;
+    private final MailService mailService;
+    private final NotificationService notificationService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -52,11 +55,14 @@ public class TaskServiceImpl implements TaskService{
         task.setEndDateTime(request.getEndDateTime());
         task.setStatus(request.isStatus());
         task.setUser(user);
+        task.setReminderSent(false);
         task.setCreatedAt(LocalDateTime.now());
 
         // Save Images
         taskRepository.save(task);
         saveTaskImages(task, images);
+        notificationService.sendTaskCreatedNotification(user,request.getTitle());
+        mailService.sendTaskCreatedMail(user.getEmail(),user.getUsername(),request.getTitle());
         return new ApiResponse<>(201,"created",null);
     }
 
@@ -96,10 +102,10 @@ public class TaskServiceImpl implements TaskService{
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
         // 2️⃣ Allow delete ONLY if completed
-        if (!task.isStatus()) {
-            return new ApiResponse<>(400,
-                    "Task must be completed before deleting", null);
-        }
+//        if (!task.isStatus()) {
+//            return new ApiResponse<>(400,
+//                    "Task must be completed before deleting", null);
+//        }
 
         // 3️⃣ Get all images
         List<TaskImages> images =
@@ -157,6 +163,33 @@ public class TaskServiceImpl implements TaskService{
                 .map(this::mapToResponse)
                 .toList();
         return new ApiResponse<>(200,"ok",responses);
+    }
+
+    // Runs every 1 minute
+    @Scheduled(fixedRate = 60000)
+    public void sendTaskReminders() {
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reminderTime = now.plusMinutes(15);
+
+        List<Tasks> tasks =
+                taskRepository.findTasksForReminder(now, reminderTime);
+
+        for (Tasks task : tasks) {
+
+            User user = task.getUser();
+
+            mailService.sendTaskReminderMail(
+                    user.getEmail(),
+                    user.getUsername(),
+                    task.getTitle(),
+                    task.getEndDateTime()
+            );
+
+            task.setReminderSent(true);
+        }
+
+        taskRepository.saveAll(tasks);
     }
 
     // ================= IMAGE SAVE LOGIC =================

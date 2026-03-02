@@ -33,7 +33,7 @@ public class Tasks {
 
     private LocalDateTime createdAt;
 
-    private String endDateTime;
+    private LocalDateTime endDateTime;
 
     private LocalDateTime updatedAt;
 
@@ -47,5 +47,7 @@ public class Tasks {
     private List<TaskImages> images = new ArrayList<>();
 
     private boolean status;
+
+    private boolean reminderSent;
 
 }

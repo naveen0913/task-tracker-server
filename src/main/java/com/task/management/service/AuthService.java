@@ -17,6 +17,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final MailService mailService;
 
     public Map<String,Object> signup(SignupRequest request) {
 
@@ -25,6 +26,7 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
         userRepository.save(user);
+        mailService.sendAccountCreationMail(request.getEmail(),request.getUsername());
         Map<String,Object> response = new HashMap<>();
         response.put("code",201);
         return response;
