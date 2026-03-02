@@ -1,11 +1,15 @@
 package com.task.management.controller;
 
 import com.task.management.DTO.TaskRequest;
+import com.task.management.config.AuthHelper;
 import com.task.management.model.Tasks;
+import com.task.management.model.User;
 import com.task.management.repository.TaskRepository;
 import com.task.management.response.ApiResponse;
 import com.task.management.service.TaskService;
+import com.task.management.service.TaskServiceImpl;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,73 +23,69 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/task")
-@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskRepository taskRepository;
-    private final TaskService taskService;
+    private final TaskServiceImpl taskService;
+    private final AuthHelper authHelper;
 
-//    @PostMapping("/add")
-//    public ResponseEntity<ApiResponse<?>> addTask(@RequestBody Tasks tasks) {
-//        tasks.setCreatedAt(LocalDateTime.now());
-//
-//        Tasks savedTask = taskRepository.save(tasks);
-//
-//        return ResponseEntity.status(HttpStatus.CREATED)
-//                .body(new ApiResponse<>(
-//                        201,
-//                        "Task added successfully",
-//                        null
-//                ));
-//    }
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createTask(
-            @RequestPart("task") TaskRequest taskRequest,
-            @RequestPart(value = "images", required = false) MultipartFile[] images,
-            @PathVariable String username
-    ) {
+            @ModelAttribute TaskRequest request,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            HttpServletRequest httpRequest) {
 
-        Tasks response = taskService.createTask(taskRequest, images, username);
-        return ResponseEntity.status(201).body("created");
+        User user = authHelper.getUserFromRequest(httpRequest);
+
+        ApiResponse task = taskService.createTask(request, images, user);
+
+        return ResponseEntity
+                .status(task.getCode())
+                .body(task);
     }
 
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<Tasks>>> getAllTasks() {
-        List<Tasks> tasks = taskRepository.findAll();
+    public ResponseEntity<?> getAllTasks(HttpServletRequest request) {
+        User user = authHelper.getUserFromRequest(request);
+        ApiResponse response = taskService.getAllTasks(user);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>(
-                        200,
-                        "Tasks fetched successfully",
-                        tasks
-                )
-        );
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> markCompleted(@PathVariable Long id) {
-        Tasks tasks = taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Tasks not found"));
-        tasks.setTitle(ti);
-        tasks.setUpdatedAt(LocalDateTime.now());
-        taskRepository.save(tasks);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>(
-                        200,
-                        "Tasks Updated successfully",
-                        null
-                )
-        );    }
 
-    @DeleteMapping("/delete/{id}")
-    public Tasks deleteTasks(@PathVariable Long id) {
-        Tasks tasks = taskRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Tasks not found"));
-        taskRepository.delete(tasks);
-        return taskRepository.save(tasks);
+    @PatchMapping("/status/{taskId}")
+    public ResponseEntity<?> updateTaskStatus(
+            @PathVariable Long taskId,
+            HttpServletRequest request) {
+
+        User user = authHelper.getUserFromRequest(request);
+
+        ApiResponse response =
+                taskService.updateTaskStatus(taskId, user);
+
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
+    }
+
+    @DeleteMapping("/delete/{taskId}")
+    public ResponseEntity<?> deleteTask(
+            @PathVariable Long taskId,
+            HttpServletRequest request) {
+
+        User user = authHelper.getUserFromRequest(request);
+
+        ApiResponse response =
+                taskService.deletedTaskById(taskId, user);
+
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
     }
 
 }

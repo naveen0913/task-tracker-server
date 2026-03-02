@@ -16,7 +16,7 @@ public class Tasks {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long taskId;
 
     private String title;
     private String description;
@@ -27,19 +27,25 @@ public class Tasks {
     @Enumerated(EnumType.STRING)
     private Urgency urgency;
 
-    private String imageUrl;
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     private LocalDateTime createdAt;
 
+    private String endDateTime;
+
     private LocalDateTime updatedAt;
 
-    @ElementCollection
-    @CollectionTable(name = "task_images", joinColumns = @JoinColumn(name = "task_id"))
-    @Column(name = "image_url")
-    private List<String> imageUrls = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "tasks",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private List<TaskImages> images = new ArrayList<>();
+
+    private boolean status;
 
 }

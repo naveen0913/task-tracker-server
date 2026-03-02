@@ -2,6 +2,7 @@ package com.task.management.service;
 
 import com.task.management.DTO.LoginRequest;
 import com.task.management.DTO.SignupRequest;
+import com.task.management.config.JwtUtil;
 import com.task.management.model.User;
 import com.task.management.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     public Map<String,Object> signup(SignupRequest request) {
 
@@ -29,15 +31,21 @@ public class AuthService {
     }
 
     public Map<String,Object> login(LoginRequest request) {
+
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!request.getPassword().equals(user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
-        Map<String,Object> response = new HashMap<>();
-        response.put("code",200);
-        response.put("data",user);
+
+        // Generate JWT
+        String token = jwtUtil.generateToken(user.getUsername());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("token", token);
+        response.put("data", user);
         return response;
     }
 

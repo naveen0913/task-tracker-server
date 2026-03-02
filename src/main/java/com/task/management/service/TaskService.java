@@ -5,6 +5,7 @@ import com.task.management.model.Tasks;
 import com.task.management.model.User;
 import com.task.management.repository.TaskRepository;
 import com.task.management.repository.UserRepository;
+import com.task.management.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.config.Task;
@@ -20,62 +21,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-public class TaskService {
 
-    private final UserRepository userRepository;
-    private final TaskRepository taskRepository;
+public interface TaskService {
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
-    public Tasks createTask(
+    ApiResponse createTask(
             TaskRequest request,
-            MultipartFile[] images,
-            String username
-    ) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+            List<MultipartFile> images,
+            User user
+    );
 
-        Tasks task = new Tasks();
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
-        task.setPriority(request.getPriority());
-        task.setUrgency(request.getUrgency());
-        task.setUser(user);
-
-        Tasks savedTask = taskRepository.save(task);
-
-        if (images != null && images.length > 0) {
-            List<String> imageUrls =
-                    saveTaskImages(savedTask.getId(), images);
-            savedTask.setImageUrls(imageUrls);
-            taskRepository.save(savedTask);
-        }
-
-        return savedTask;
-    }
-
-    public List<String> saveTaskImages(Long taskId, MultipartFile[] files) {
-        List<String> imageUrls = new ArrayList<>();
-
-        try {
-            Path taskDir = Paths.get(uploadDir, "tasks", taskId.toString());
-            Files.createDirectories(taskDir);
-
-            for (MultipartFile file : files) {
-                String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                Path filePath = taskDir.resolve(filename);
-
-                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                imageUrls.add("/uploads/tasks/" + taskId + "/" + filename);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store images", e);
-        }
-
-        return imageUrls;
-    }
+    ApiResponse updateTask(
+            Long taskId,
+            TaskRequest request,
+            List<MultipartFile> images
+    );
 
 }

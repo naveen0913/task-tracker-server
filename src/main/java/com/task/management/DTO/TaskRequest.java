@@ -8,7 +8,8 @@ import lombok.Data;
 public class TaskRequest {
     private String title;
     private String description;
-    private Priority priority;
     private Urgency urgency;
-    private String imageUrl;
+    private String endDateTime;
+    private boolean status;
+    private Priority priority;
 }
