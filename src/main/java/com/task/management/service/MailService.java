@@ -8,6 +8,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +70,7 @@ public class MailService {
         String body = "Hello " + username + ",\n\n"
                 + "Reminder: Your task is ending soon.\n\n"
                 + "Task: " + taskTitle + "\n"
-                + "Ends At: " + endTime + "\n\n"
+                + "Ends At: " + formattedIndianTime(endTime) + "\n\n"
                 + "You have only 15 minutes remaining.\n\n"
                 + "Regards,\nTaskFlow Team";
 
@@ -75,6 +78,20 @@ public class MailService {
         javaMailSender.send(message);
     }
 
+    public String formattedIndianTime(LocalDateTime endTime){
+        ZoneId indiaZone = ZoneId.of("Asia/Kolkata");
+
+        ZonedDateTime indianTime = endTime
+                .atZone(ZoneId.systemDefault())   // your server zone
+                .withZoneSameInstant(indiaZone);  // convert to IST
+
+        // Format to 12-hour format
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
+
+        String formattedTime = indianTime.format(formatter);
+        return formattedTime;
+    }
 
 
 }

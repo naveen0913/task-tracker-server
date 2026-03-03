@@ -3,6 +3,8 @@ package com.task.management.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Entity
 public class User {
@@ -18,4 +20,17 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
+    private String profileUrl;
+
+    private boolean status;
+
+    private LocalDateTime created;
+
+    private LocalDateTime updated;
+
+    private String bio;
+
+    private String fullName;
+
 }

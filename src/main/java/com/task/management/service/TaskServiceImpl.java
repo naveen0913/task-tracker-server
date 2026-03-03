@@ -10,6 +10,7 @@ import com.task.management.repository.UserRepository;
 import com.task.management.response.ApiResponse;
 import com.task.management.response.TaskImageResponse;
 import com.task.management.response.TaskResponse;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,7 +31,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class TaskServiceImpl implements TaskService{
+public class TaskServiceImpl implements TaskService {
 
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
@@ -61,41 +62,56 @@ public class TaskServiceImpl implements TaskService{
         // Save Images
         taskRepository.save(task);
         saveTaskImages(task, images);
-        notificationService.sendTaskCreatedNotification(user,request.getTitle());
-        mailService.sendTaskCreatedMail(user.getEmail(),user.getUsername(),request.getTitle());
-        return new ApiResponse<>(201,"created",null);
+        notificationService.sendTaskCreatedNotification(user, request.getTitle());
+        mailService.sendTaskCreatedMail(user.getEmail(), user.getUsername(), request.getTitle());
+        return new ApiResponse<>(201, "created", null);
     }
 
     // ================= UPDATE TASK =================
 
     @Override
     public ApiResponse updateTask(Long taskId,
-                            TaskRequest request,
-                            List<MultipartFile> images) {
+                                  TaskRequest request,
+                                  List<MultipartFile> images) {
 
         Tasks task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
-        task.setUrgency(request.getUrgency());
-        task.setPriority(request.getPriority());
-        task.setEndDateTime(request.getEndDateTime());
-        task.setStatus(request.isStatus());
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            task.setTitle(request.getTitle());
+        }
+
+        if (request.getDescription() != null) {
+            task.setDescription(request.getDescription());
+        }
+
+        if (request.getUrgency() != null) {
+            task.setUrgency(request.getUrgency());
+        }
+
+        if (request.getPriority() != null) {
+            task.setPriority(request.getPriority());
+        }
+
+        if (request.getEndDateTime() != null) {
+            task.setEndDateTime(request.getEndDateTime());
+        }
+
         task.setUpdatedAt(LocalDateTime.now());
 
-        // Remove old images
-        task.getImages().clear();
+        if (images != null && !images.isEmpty()) {
 
-        saveTaskImages(task, images);
+//            task.getImages().clear();
+            saveTaskImages(task, images);
+        }
 
         taskRepository.save(task);
-        return new ApiResponse<>(200,"updated","null");
+        notificationService.sendTaskDetailsUpdate(task.getUser(),task.getTitle());
+        return new ApiResponse<>(200, "Task updated successfully", null);
     }
 
     @Transactional
     public ApiResponse deletedTaskById(Long taskId, User user) {
-
 
         Tasks task = taskRepository
                 .findByTaskIdAndUser(taskId, user)
@@ -132,7 +148,7 @@ public class TaskServiceImpl implements TaskService{
 
         // 6️⃣ Delete task
         taskRepository.delete(task);
-
+        notificationService.sendTaskDeletedNotification(user, task.getTitle());
         return new ApiResponse<>(200, "Task deleted successfully", null);
     }
 
@@ -149,7 +165,7 @@ public class TaskServiceImpl implements TaskService{
         task.setUpdatedAt(LocalDateTime.now());
 
         taskRepository.save(task);
-
+        notificationService.sendTaskStatusChangedNotification(user, task.getTitle());
         return new ApiResponse<>(
                 200,
                 "Task status updated",
@@ -157,12 +173,20 @@ public class TaskServiceImpl implements TaskService{
         );
     }
 
-    public ApiResponse getAllTasks(User user){
-        List<Tasks> listByUser =  taskRepository.getAllListByUser(user);
+    @Transactional(readOnly = true)
+    public ApiResponse getAllTasks(User user) {
+        List<Tasks> listByUser = taskRepository.getAllListByUser(user);
         List<TaskResponse> responses = listByUser.stream()
                 .map(this::mapToResponse)
                 .toList();
-        return new ApiResponse<>(200,"ok",responses);
+        return new ApiResponse<>(200, "ok", responses);
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse getTaskById(Long id){
+        Tasks tasks = taskRepository.findById(id).orElseThrow(()-> new EntityNotFoundException("Task not found"));
+        TaskResponse response = mapToResponse(tasks);
+        return new ApiResponse<>(200, "ok", response);
     }
 
     // Runs every 1 minute
@@ -190,6 +214,13 @@ public class TaskServiceImpl implements TaskService{
         }
 
         taskRepository.saveAll(tasks);
+    }
+
+    @Transactional
+    public ApiResponse deleteTaskImage(Long image){
+        TaskImages images = taskImageRepo.findById(image).orElseThrow(()-> new EntityNotFoundException("Image not found"));
+        taskImageRepo.deleteById(image);
+        return new ApiResponse(200,"deleted",null);
     }
 
     // ================= IMAGE SAVE LOGIC =================
@@ -227,7 +258,7 @@ public class TaskServiceImpl implements TaskService{
                 task.getImages().stream()
                         .map(img -> new TaskImageResponse(
                                 img.getImageId(),
-                                        "http://localhost:8081"+img.getImageUrl()
+                                "http://localhost:8081" + img.getImageUrl()
                         ))
                         .toList();
 

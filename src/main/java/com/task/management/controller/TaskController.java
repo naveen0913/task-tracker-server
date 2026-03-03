@@ -56,6 +56,15 @@ public class TaskController {
                 .body(response);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getAllTasks(HttpServletRequest request,@PathVariable Long id) {
+        User user = authHelper.getUserFromRequest(request);
+        ApiResponse response = taskService.getTaskById(id);
+
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
+    }
 
 
     @PatchMapping("/status/{taskId}")
@@ -82,6 +91,39 @@ public class TaskController {
 
         ApiResponse response =
                 taskService.deletedTaskById(taskId, user);
+
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
+    }
+
+    @DeleteMapping("/delete/image/{taskId}")
+    public ResponseEntity<?> deleteTaskImage(
+            @PathVariable Long taskId,
+            HttpServletRequest request) {
+
+        User user = authHelper.getUserFromRequest(request);
+
+        ApiResponse response =
+                taskService.deleteTaskImage(taskId);
+
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
+    }
+
+
+    @PutMapping("/update/{taskId}")
+    public ResponseEntity<?> updateTask(
+            @PathVariable Long taskId,
+            @ModelAttribute TaskRequest taskRequest,
+            @RequestParam(value = "images",required = false) List<MultipartFile> images,
+            HttpServletRequest request) {
+
+        User user = authHelper.getUserFromRequest(request);
+
+        ApiResponse response =
+                taskService.updateTask(taskId,taskRequest, images);
 
         return ResponseEntity
                 .status(response.getCode())

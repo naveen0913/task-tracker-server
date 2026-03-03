@@ -16,10 +16,29 @@ public class NotificationService {
     private final NotificationRepo notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void sendTaskCreatedNotification(User user, String taskTitle) {
 
+    // Send notification when a task is created
+    public void sendTaskCreatedNotification(User user, String taskTitle) {
+        sendNotification(user, "New Task Created: " + taskTitle);
+    }
+
+    // Send notification when a task is deleted
+    public void sendTaskDeletedNotification(User user, String taskTitle) {
+        sendNotification(user, "Task Deleted: " + taskTitle);
+    }
+
+    // Send notification when a task status is changed
+    public void sendTaskStatusChangedNotification(User user, String taskTitle) {
+        sendNotification(user, "Task Status Updated: " + taskTitle);
+    }
+
+    public void sendTaskDetailsUpdate(User user, String title) {
+        sendNotification(user, "Task Details Updated: " + title);
+    }
+
+    private void sendNotification(User user, String message) {
         Notification notification = Notification.builder()
-                .message("New Task Created: " + taskTitle)
+                .message(message)
                 .createdAt(LocalDateTime.now())
                 .user(user)
                 .isRead(false)
@@ -28,7 +47,7 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         messagingTemplate.convertAndSendToUser(
-                user.getEmail(),   // unique user identifier
+                user.getEmail(),
                 "/queue/notifications",
                 notification
         );
