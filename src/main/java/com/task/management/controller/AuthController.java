@@ -70,7 +70,17 @@ public class AuthController {
 
         ApiResponse response = authService.updateUser(id, updateRequest,profile);
 
-        return ResponseEntity.status(response.getCode()).body(response.getData());
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @PatchMapping("/delete-profile-image/{id}")
+    public ResponseEntity<?> deleteProfileImage(HttpServletRequest request, @PathVariable Long id) {
+
+        User user = (User) request.getAttribute("loggedUser");
+
+        ApiResponse response = authService.deleteProfileImage(id);
+        return ResponseEntity.status(response.getCode()).body(response);
+
     }
 
 }

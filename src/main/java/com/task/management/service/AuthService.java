@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -138,5 +139,23 @@ public class AuthService {
         }
     }
 
+
+    public ApiResponse deleteProfileImage(Long id) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Delete file from uploads folder
+        if (user.getProfileUrl() != null) {
+            File file = new File("uploads/" + user.getProfileUrl());
+            if (file.exists()) {
+                file.delete();
+            }
+            user.setProfileUrl(null);
+            userRepository.save(user);
+        }
+
+        return new ApiResponse<>(200,"deleted",null);
+    }
 
 }
