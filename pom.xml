@@ -5,14 +5,14 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.9</version>
+		<version>3.3.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>demo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Task Tracker</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -98,7 +98,26 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
+
+            <configuration>
+                <excludes>
+                    <exclude>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                    </exclude>
+                </excludes>
+                <image>
+                    <name>docker.io/unb0913/${project.artifactId}:${project.version}</name>
+                    <publish>true</publish>
+                </image>
+                <docker>
+                    <publishRegistry>
+                        <username>${env.DOCKER_USER}</username>
+                        <password>${env.DOCKER_PASS}</password>
+                    </publishRegistry>
+                </docker>
+            </configuration>
+            </plugin>
 		</plugins>
 	</build>
 
