@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,6 +45,7 @@ public class AuthService {
         user.setPassword(request.getPassword());
         user.setCreated(LocalDateTime.now());
         user.setStatus(true);
+        user.setRole("user");
         userRepository.save(user);
         mailService.sendAccountCreationMail(request.getEmail(), request.getUsername());
         Map<String, Object> response = new HashMap<>();
@@ -156,6 +158,11 @@ public class AuthService {
         }
 
         return new ApiResponse<>(200,"deleted",null);
+    }
+
+    public ApiResponse getAllUsers(){
+        List<User> users = userRepository.findAll();
+        return new ApiResponse<>(200,"users fetched",users);
     }
 
 }

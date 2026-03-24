@@ -1,0 +1,13 @@
+name: deploy to GCP cloud run
+
+on:
+  workflow_run:
+    types:
+      - completed
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3

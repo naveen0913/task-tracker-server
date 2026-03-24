@@ -56,6 +56,16 @@ public class TaskController {
                 .body(response);
     }
 
+    @GetMapping("/list/all")
+    public ResponseEntity<?> getAllUsersTasks(HttpServletRequest request) {
+        User user = authHelper.getUserFromRequest(request);
+        ApiResponse response = taskService.getAllUsersTasks();
+
+        return ResponseEntity
+                .status(response.getCode())
+                .body(response);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getAllTasks(HttpServletRequest request,@PathVariable Long id) {
         User user = authHelper.getUserFromRequest(request);

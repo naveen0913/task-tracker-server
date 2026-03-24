@@ -183,6 +183,15 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Transactional(readOnly = true)
+    public ApiResponse getAllUsersTasks() {
+        List<Tasks> allTasks = taskRepository.findAll();
+        List<TaskResponse> responses = allTasks.stream()
+                .map(this::mapToResponse)
+                .toList();
+        return new ApiResponse<>(200, "ok", responses);
+    }
+
+    @Transactional(readOnly = true)
     public ApiResponse getTaskById(Long id){
         Tasks tasks = taskRepository.findById(id).orElseThrow(()-> new EntityNotFoundException("Task not found"));
         TaskResponse response = mapToResponse(tasks);

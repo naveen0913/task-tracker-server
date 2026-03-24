@@ -83,4 +83,12 @@ public class AuthController {
 
     }
 
+    @GetMapping("/users/all")
+    public ResponseEntity<?> getUserList(HttpServletRequest request) {
+
+        User user = (User) request.getAttribute("loggedUser");
+        ApiResponse response = authService.getAllUsers();
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+
 }
